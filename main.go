@@ -47,18 +47,19 @@ func main() {
 		os.Exit(0)
 	}
 
-	if len(systems) == 0 {
-		fmt.Println("No systems loaded for polling")
-		flag.Usage()
-		os.Exit(0)
-	}
-
 	app := tview.NewApplication()
-
 	pages := tview.NewPages()
 
+	if len(systems) == 0 {
+		ShowSystemCreate(pages, func(newState *System, submitted bool) {
+			if submitted {
+				app.Stop()
+			}
+		})
+	}
+
 	table := DisplayTable(app)
-	pages.AddPage("Systems", table, true, true)
+	pages.AddPage("Systems", table, true, len(systems) > 0)
 
 	if err := app.SetRoot(pages, true).EnableMouse(true).Run(); err != nil {
 		panic(err)
