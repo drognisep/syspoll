@@ -82,7 +82,7 @@ func main() {
 		app.Stop()
 	})
 	quitBtn.SetBackgroundColor(tcell.ColorRed)
-	btnRow := Row(addBtn, saveButton(pages, table), quitBtn)
+	btnRow := Row(addBtn, saveButton(pages, table), quitBtn).SetItemPadding(1)
 	grid := tview.NewGrid().
 		SetColumns(0).
 		SetRows(1, 0).

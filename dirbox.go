@@ -10,9 +10,11 @@ type DirBox struct {
 	*tview.Box
 
 	horizontal bool
-	mux        sync.RWMutex
-	items      []tview.Primitive
 	fullScreen bool
+	padding    int
+
+	mux   sync.RWMutex
+	items []tview.Primitive
 }
 
 func Row(items ...tview.Primitive) *DirBox {
@@ -33,6 +35,13 @@ func Col(items ...tview.Primitive) *DirBox {
 
 func (b *DirBox) SetFullScreen(fullscreen bool) *DirBox {
 	b.fullScreen = fullscreen
+	return b
+}
+
+func (b *DirBox) SetItemPadding(padding int) *DirBox {
+	if padding >= 0 {
+		b.padding = padding
+	}
 	return b
 }
 
@@ -132,11 +141,15 @@ func (b *DirBox) calcHDims(offX, offY, h int) [][4]int {
 	defer b.mux.RUnlock()
 
 	var runningW int
+	var padding int
 	dims := make([][4]int, len(b.items))
 	for i, item := range b.items {
+		if i > 0 {
+			padding = b.padding
+		}
 		_, _, w, _ := item.GetRect()
-		dims[i] = [4]int{offX + runningW, offY, w, h}
-		runningW += w
+		dims[i] = [4]int{offX + runningW + padding, offY, w, h}
+		runningW += w + padding
 	}
 	return dims
 }
@@ -146,11 +159,15 @@ func (b *DirBox) calcVDims(offX, offY, w int) [][4]int {
 	defer b.mux.RUnlock()
 
 	var runningH int
+	var padding int
 	dims := make([][4]int, len(b.items))
 	for i, item := range b.items {
+		if i > 0 {
+			padding = b.padding
+		}
 		_, _, _, h := item.GetRect()
-		dims[i] = [4]int{offX, offY + runningH, w, h}
-		runningH += h
+		dims[i] = [4]int{offX, offY + runningH + padding, w, h}
+		runningH += h + padding
 	}
 	return dims
 }
