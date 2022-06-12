@@ -11,10 +11,7 @@ import (
 )
 
 const (
-	statusUp   = "[green]UP"
-	statusDown = "[red]DOWN"
-	statusErr  = "[red]ERR"
-	statusUnk  = "[gray]UNK"
+	statusUp = "[green]UP"
 
 	nameCol      = 0
 	statusCol    = 1
@@ -38,7 +35,7 @@ func (t *systemTable) Add(sys System) {
 	t.systems = append(t.systems, &sys)
 	t.mux.Unlock()
 	t.Table.SetCell(rows, nameCol, tview.NewTableCell(sys.Name))
-	t.Table.SetCell(rows, statusCol, tview.NewTableCell(statusUnk))
+	t.Table.SetCell(rows, statusCol, tview.NewTableCell(Unknown.UiString()))
 	t.Table.SetCell(rows, intervalCol, tview.NewTableCell(sys.CheckInterval))
 	t.Table.SetCell(rows, failCountCol, tview.NewTableCell(strconv.Itoa(len(sys.FailedChecks))).SetAlign(tview.AlignRight))
 
@@ -84,8 +81,8 @@ func httpPollingLoop(app *tview.Application, table *tview.Table, sys *System, r 
 	for {
 		resp, err := http.Get(_url.String())
 		if err != nil {
-			sys.FailedChecks = append(sys.FailedChecks, time.Now())
-			table.SetCell(r, statusCol, tview.NewTableCell(statusDown))
+			sys.FailedChecks = append(sys.FailedChecks, DownFailure(time.Now()))
+			table.SetCell(r, statusCol, tview.NewTableCell(Down.UiString()))
 			table.SetCell(r, failCountCol, tview.NewTableCell(strconv.Itoa(len(sys.FailedChecks))).SetAlign(tview.AlignRight))
 			app.Draw()
 			time.Sleep(dur)
@@ -93,8 +90,8 @@ func httpPollingLoop(app *tview.Application, table *tview.Table, sys *System, r 
 		}
 		code := resp.StatusCode
 		if code > 399 {
-			sys.FailedChecks = append(sys.FailedChecks, time.Now())
-			table.SetCell(r, statusCol, tview.NewTableCell(fmt.Sprintf("%s - %d", statusErr, code)))
+			sys.FailedChecks = append(sys.FailedChecks, ErrorFailure(time.Now()))
+			table.SetCell(r, statusCol, tview.NewTableCell(fmt.Sprintf("%s - %d", Error.UiString(), code)))
 			table.SetCell(r, failCountCol, tview.NewTableCell(strconv.Itoa(len(sys.FailedChecks))).SetAlign(tview.AlignRight))
 		} else {
 			table.SetCell(r, statusCol, tview.NewTableCell(fmt.Sprintf("%s - %d", statusUp, code)))
