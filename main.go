@@ -32,18 +32,12 @@ func main() {
 	flag.Parse()
 
 	if exportTemplate {
-		file, err := os.OpenFile("template.json", os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			fmt.Printf("Failed to create/open file 'template.json': %v\n", err)
-			os.Exit(1)
-		}
-		encoder := json.NewEncoder(file)
+		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetIndent("", "  ")
 		if err := encoder.Encode(template); err != nil {
-			fmt.Printf("Failed to write to template.json: %v\n", err)
+			fmt.Printf("Failed to output template: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println("Wrote polling spec to template.json")
 		os.Exit(0)
 	}
 	if len(loadFile) != 0 {
