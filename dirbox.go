@@ -6,17 +6,22 @@ import (
 	"sync"
 )
 
+// DirBox is a collection Primitive that is a bit like tview.Flex, but does not try to fill the given space by default.
+// DirBox will pack Primitives along the axis at their minimum reported size, and  will attempt to make them match their dimensions along the cross axis.
+// DirBox will not allow a Primitive to exceed its own cross axis dimension.
 type DirBox struct {
 	*tview.Box
 
-	horizontal bool
-	fullScreen bool
-	padding    int
+	horizontal  bool
+	fullScreen  bool
+	padding     int
+	expandCross bool
 
 	mux   sync.RWMutex
 	items []tview.Primitive
 }
 
+// Row will return a horizontal DirBox.
 func Row(items ...tview.Primitive) *DirBox {
 	return &DirBox{
 		Box:        tview.NewBox(),
@@ -25,6 +30,7 @@ func Row(items ...tview.Primitive) *DirBox {
 	}
 }
 
+// Col will return a vertical DirBox.
 func Col(items ...tview.Primitive) *DirBox {
 	return &DirBox{
 		Box:        tview.NewBox(),
@@ -33,11 +39,13 @@ func Col(items ...tview.Primitive) *DirBox {
 	}
 }
 
+// SetFullScreen will allow the user to specify whether the DirBox should use the entire available screen space when drawing.
 func (b *DirBox) SetFullScreen(fullscreen bool) *DirBox {
 	b.fullScreen = fullscreen
 	return b
 }
 
+// SetItemPadding will set the space between individual Primitives along the axis.
 func (b *DirBox) SetItemPadding(padding int) *DirBox {
 	if padding >= 0 {
 		b.padding = padding
@@ -45,6 +53,13 @@ func (b *DirBox) SetItemPadding(padding int) *DirBox {
 	return b
 }
 
+// SetExpandCrossAxis will allow the user to specify that this DirBox should expand its elements along the cross axis as much as possible within its own allotted space.
+func (b *DirBox) SetExpandCrossAxis(expand bool) *DirBox {
+	b.expandCross = expand
+	return b
+}
+
+// Draw will draw the DirBox and the Primitive items it contains.
 func (b *DirBox) Draw(screen tcell.Screen) {
 	b.Box.DrawForSubclass(screen, b)
 	var x, y int
@@ -175,6 +190,10 @@ func (b *DirBox) calcVDims(offX, offY, w int) [][4]int {
 func (b *DirBox) maxItemOrBoxHeight() int {
 	_, _, _, maxHeight := b.GetInnerRect()
 
+	if b.expandCross && b.horizontal {
+		return maxHeight
+	}
+
 	var runningMax int
 	for _, item := range b.items {
 		_, _, _, h := item.GetRect()
@@ -190,6 +209,10 @@ func (b *DirBox) maxItemOrBoxHeight() int {
 
 func (b *DirBox) maxItemOrBoxWidth() int {
 	_, _, maxWidth, _ := b.GetInnerRect()
+
+	if b.expandCross && !b.horizontal {
+		return maxWidth
+	}
 
 	var runningMax int
 	for _, item := range b.items {
