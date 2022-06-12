@@ -55,7 +55,7 @@ func main() {
 	app := tview.NewApplication()
 	pages := tview.NewPages()
 
-	table := DisplayTable(app, pages, systems...)
+	table := NewSystemTable(app, pages, systems...)
 	if len(table.systems) == 0 {
 		ShowSystemCreate(pages, func(newState *System, submitted bool) {
 			if submitted && newState != nil {

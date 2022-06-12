@@ -45,7 +45,7 @@ func (t *systemTable) Add(sys System) {
 	}
 }
 
-func DisplayTable(app *tview.Application, pages *tview.Pages, systems ...System) *systemTable {
+func NewSystemTable(app *tview.Application, pages *tview.Pages, systems ...System) *systemTable {
 	table := tview.NewTable().SetBorders(true)
 	table.SetBorderPadding(0, 0, 1, 1)
 	table.SetCell(0, nameCol, tview.NewTableCell("System").SetAttributes(tcell.AttrBold).SetAlign(tview.AlignCenter))

@@ -65,9 +65,7 @@ func ShowSystemEdit(pages *tview.Pages, system *System, callback editCallback) {
 		pages.RemovePage(pageName)
 		callback(nil, false)
 	})
-	fn := form.GetInputCapture()
 	wrapper := GridWrapper(form, 50, 13)
-	form.SetInputCapture(fn)
 
 	pages.AddAndSwitchToPage(pageName, wrapper, true)
 }
@@ -79,12 +77,12 @@ func GridWrapper(p tview.Primitive, width, height int) tview.Primitive {
 		AddItem(p, 1, 1, 1, 1, 0, 0, true)
 }
 
-func urlValidFunc(textToCheck string, lastChar rune) bool {
+func urlValidFunc(textToCheck string, _ rune) bool {
 	_, err := url.Parse(textToCheck)
 	return err == nil
 }
 
-func durValidFunc(textToCheck string, lastChar rune) bool {
+func durValidFunc(textToCheck string, _ rune) bool {
 	_, err := time.ParseDuration(textToCheck)
 	return err == nil
 }
