@@ -6,6 +6,7 @@ import (
 	"github.com/rivo/tview"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -21,7 +22,33 @@ const (
 	failCountCol = 3
 )
 
-func DisplayTable(app *tview.Application) *tview.Table {
+type systemTable struct {
+	*tview.Table
+
+	app   *tview.Application
+	pages *tview.Pages
+
+	mux     sync.Mutex
+	systems []*System
+}
+
+func (t *systemTable) Add(sys System) {
+	rows := t.GetRowCount()
+	t.mux.Lock()
+	t.systems = append(t.systems, &sys)
+	t.mux.Unlock()
+	t.Table.SetCell(rows, nameCol, tview.NewTableCell(sys.Name))
+	t.Table.SetCell(rows, statusCol, tview.NewTableCell(statusUnk))
+	t.Table.SetCell(rows, intervalCol, tview.NewTableCell(sys.CheckInterval))
+	t.Table.SetCell(rows, failCountCol, tview.NewTableCell(strconv.Itoa(len(sys.FailedChecks))).SetAlign(tview.AlignRight))
+
+	switch {
+	case sys.Http != nil:
+		go httpPollingLoop(t.app, t.Table, &sys, rows)
+	}
+}
+
+func DisplayTable(app *tview.Application, pages *tview.Pages, systems ...System) *systemTable {
 	table := tview.NewTable().SetBorders(true)
 	table.SetBorderPadding(0, 0, 1, 1)
 	table.SetCell(0, nameCol, tview.NewTableCell("System").SetAttributes(tcell.AttrBold).SetAlign(tview.AlignCenter))
@@ -29,23 +56,23 @@ func DisplayTable(app *tview.Application) *tview.Table {
 	table.SetCell(0, intervalCol, tview.NewTableCell("Interval").SetAttributes(tcell.AttrBold).SetAlign(tview.AlignCenter))
 	table.SetCell(0, failCountCol, tview.NewTableCell("Failures").SetAttributes(tcell.AttrBold).SetAlign(tview.AlignCenter))
 
-	for r, sys := range systems {
-		r := r + 1
-		sys := sys
-		table.SetCell(r, nameCol, tview.NewTableCell(sys.Name))
-		table.SetCell(r, statusCol, tview.NewTableCell(statusUnk))
-		table.SetCell(r, intervalCol, tview.NewTableCell(sys.CheckInterval))
-		table.SetCell(r, failCountCol, tview.NewTableCell(strconv.Itoa(len(sys.FailedChecks))).SetAlign(tview.AlignRight))
-
-		switch {
-		case sys.Http != nil:
-			go pollingLoop(app, table, sys, r)
-		}
+	sysTable := &systemTable{
+		Table: table,
+		app:   app,
+		pages: pages,
 	}
-	return table
+	for _, sys := range systems {
+		sys := sys
+		sys.FailedChecks = nil
+		sysTable.Add(sys)
+	}
+	return sysTable
 }
 
-func pollingLoop(app *tview.Application, table *tview.Table, sys System, r int) {
+func httpPollingLoop(app *tview.Application, table *tview.Table, sys *System, r int) {
+	if sys.Http == nil {
+		return
+	}
 	_url, err := sys.Http.ToURL()
 	if err != nil {
 		return

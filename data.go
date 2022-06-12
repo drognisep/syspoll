@@ -8,7 +8,7 @@ import (
 type System struct {
 	Name          string      `json:"system"`
 	CheckInterval string      `json:"interval"`
-	FailedChecks  []time.Time `json:"-"`
+	FailedChecks  []time.Time `json:"failedChecks,omitempty"`
 	Http          *CheckHttp  `json:"http,omitempty"`
 }
 
